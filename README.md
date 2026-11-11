@@ -67,6 +67,27 @@ jobs:
 >
 > The action makes **no GitHub API calls** — `actions: read` is not used. Per-step attribution is causal (eBPF process/socket tagging in the cargowall binary) and step names come from the runner's local Worker log, which shares the runner's clock with the kernel events.
 
+### Start before other actions' pre hooks
+
+This fork supports `start-phase: pre` (default: `main`). Put CargoWall before
+actions such as Thoth whose initialization runs in a pre hook:
+
+```yaml
+- uses: mickmister/cargowall-action@vk/46e5-vd-multi-instanc
+  with:
+    start-phase: pre
+    mode: audit
+    offline: 'true'
+- uses: plengauer/Thoth/actions/instrument/job@v5
+```
+
+CargoWall starts once in its pre hook, re-publishes its outputs in main, and
+keeps its existing post summary/cleanup. Post hooks run in reverse order, so
+CargoWall remains active through the later action's cleanup. Configuration and
+custom binaries must already exist at pre time; files produced by checkout or
+earlier regular steps are unavailable. Initial runner setup, action downloads,
+and CargoWall's own startup before it is ready are outside this coverage.
+
 ### How Hostnames Match
 
 A plain hostname also matches its subdomains, at any depth:

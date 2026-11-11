@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@actions/core', () => ({
+  getInput: vi.fn(() => ''),
+  getState: vi.fn(() => ''),
   setOutput: vi.fn(),
   saveState: vi.fn(),
   setFailed: vi.fn(),

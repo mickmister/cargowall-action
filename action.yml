@@ -7,6 +7,9 @@ branding:
   color: 'blue'
 
 inputs:
+  start-phase:
+    description: 'When to start CargoWall: "main" (default) or "pre" (before regular steps and later actions pre hooks). Pre mode requires configuration and binaries to exist before checkout.'
+    default: 'main'
   mode:
     # Deliberately no `default:` — the runner materialises defaults into INPUT_*
     # exactly like caller-supplied values, so declaring one here would make an
@@ -148,6 +151,7 @@ outputs:
 
 runs:
   using: 'node24'
+  pre: 'dist/pre/index.js'
   main: 'dist/main/index.js'
   post: 'dist/post/index.js'
   post-if: 'always()'

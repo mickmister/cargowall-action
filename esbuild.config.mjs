@@ -10,6 +10,7 @@ const shared = {
 }
 
 await Promise.all([
+  esbuild.build({ ...shared, entryPoints: ['src/pre.ts'], outfile: 'dist/pre/index.js' }),
   esbuild.build({ ...shared, entryPoints: ['src/main.ts'], outfile: 'dist/main/index.js' }),
   esbuild.build({ ...shared, entryPoints: ['src/post.ts'], outfile: 'dist/post/index.js' }),
 ])

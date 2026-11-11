@@ -21546,6 +21546,9 @@ function saveState(name, value) {
   }
   issueCommand("save-state", { name }, toCommandValue(value));
 }
+function getState(name) {
+  return process.env[`STATE_${name}`] || "";
+}
 function getIDToken(aud) {
   return __awaiter9(this, void 0, void 0, function* () {
     return yield OidcClient.getIDToken(aud);
@@ -26339,25 +26342,38 @@ function sleep2(ms) {
   return new Promise((resolve2) => setTimeout(resolve2, ms));
 }
 
-// src/main.ts
-async function run() {
+// src/lifecycle.ts
+var START_RESULT = "cargowall-start-result";
+async function run(phase) {
   try {
-    const ebpfSupported = await setup();
-    if (!ebpfSupported) {
-      setOutput("supported", "false");
-      saveState("cargowall-skipped", "true");
+    const startPhase = getInput("start-phase") || "main";
+    if (startPhase !== "pre" && startPhase !== "main") {
+      throw new Error(`Invalid start-phase "${startPhase}" \u2014 expected "pre" or "main".`);
+    }
+    if (phase === "pre" && startPhase === "main") return;
+    if (phase === "main" && startPhase === "pre") {
+      const saved = getState(START_RESULT);
+      if (!saved) throw new Error("CargoWall pre startup did not complete; refusing to start it again in main.");
+      const result2 = JSON.parse(saved);
+      setOutput("supported", String(result2.supported));
+      if (result2.pid !== null) setOutput("pid", result2.pid);
       return;
     }
-    await start();
-  } catch (error2) {
-    if (error2 instanceof Error) {
-      setFailed(error2.message);
-    } else {
-      setFailed(String(error2));
+    if (!await setup()) {
+      setOutput("supported", "false");
+      saveState("cargowall-skipped", "true");
+      saveState(START_RESULT, JSON.stringify({ supported: false, pid: null }));
+      return;
     }
+    const result = await start();
+    saveState(START_RESULT, JSON.stringify(result));
+  } catch (error2) {
+    setFailed(error2 instanceof Error ? error2.message : String(error2));
   }
 }
-run();
+
+// src/main.ts
+run("main");
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:
